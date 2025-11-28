@@ -1,28 +1,16 @@
-# Backend Dockerfile - Node/Express
-FROM node:18-alpine AS builder
+FROM node:20-alpine
+
 WORKDIR /app
 
-# copy package files and install dependencies
+# Copy package files
 COPY package*.json ./
-RUN npm ci
 
-# copy source
+# Use npm install instead of npm ci (because lock file is mismatched)
+RUN npm install --legacy-peer-deps
+
+# Copy source code
 COPY . .
 
-# If you have build steps (tsc etc) add them here:
-# RUN npm run build
+EXPOSE 5000
 
-# runtime image
-FROM node:18-alpine
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app ./
-
-# ensure non-root user
-RUN chown -R node:node /app
-USER node
-
-EXPOSE 3000
-# use the environment variable PORT if set by docker-compose; fallback to 3000
-CMD ["sh", "-c", "node ${ENTRYPOINT:-server.js}"]
-
+CMD ["npm", "start"]

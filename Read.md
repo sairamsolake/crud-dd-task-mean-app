@@ -54,6 +54,7 @@ Pushes images to Docker Hub
 Auto-deploys to EC2
 
 # Project Structure
+
 crud-dd-task-mean-app/
 │── backend/
 │   ├── Dockerfile
@@ -77,6 +78,9 @@ Database	MongoDB + Mongoose
 Containerization	Docker, Docker Compose
 CI/CD	Jenkins Pipeline
 Hosting	AWS EC2
+
+# Docker Images And Containers 
+<img width="1660" height="418" alt="image" src="https://github.com/user-attachments/assets/4fcb9ff2-665e-4f2e-93e4-590dce25f69b" />
 
 # Docker Setup
 Build Backend Image

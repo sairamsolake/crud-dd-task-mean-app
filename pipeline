@@ -2,82 +2,64 @@ pipeline {
     agent any
 
     environment {
-        FRONTEND_IMAGE = "sairam2107/crud-frontend"
-        BACKEND_IMAGE  = "sairam2107/crud-backend"
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub_creds')
+        MONGO_IMAGE = "sairam2107/mongo"
+        BACKEND_IMAGE = "sairam2107/crud-dd-task-mean-app-backend"
+        FRONTEND_IMAGE = "sairam2107/crud-dd-task-mean-app-frontend"
     }
 
     stages {
 
-        stage('Checkout Code') {
-            steps {
-                git branch: 'main',
-                url: 'https://github.com/sairamsolake/crud-dd-task-mean-app.git'
-            }
-        }
-
-        stage('Build Frontend Image') {
-            steps {
-                dir('frontend') {
-                    sh 'docker build -t $FRONTEND_IMAGE:$BUILD_NUMBER .'
-                }
-            }
-        }
-
-        stage('Build Backend Image') {
-            steps {
-                dir('backend') {
-                    sh 'docker build -t $BACKEND_IMAGE:$BUILD_NUMBER .'
-                }
-            }
-        }
-
-        stage('Login to DockerHub') {
-            steps {
-                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-            }
-        }
-
-        stage('Push Images to Docker Hub') {
+        stage('Pull Latest Images') {
             steps {
                 sh """
-                docker push $FRONTEND_IMAGE:$BUILD_NUMBER
-                docker push $BACKEND_IMAGE:$BUILD_NUMBER
+                docker pull $MONGO_IMAGE
+                docker pull $BACKEND_IMAGE
+                docker pull $FRONTEND_IMAGE
                 """
             }
         }
 
-        stage('Deploy to Server') {
+        stage('Stop Old Containers') {
             steps {
-                sshagent (credentials: ['ec2_ssh_key']) {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no ubuntu@YOUR_SERVER_IP '
-                        docker pull $FRONTEND_IMAGE:$BUILD_NUMBER &&
-                        docker pull $BACKEND_IMAGE:$BUILD_NUMBER &&
-                        
-                        docker stop frontend || true &&
-                        docker stop backend || true &&
-                        docker rm frontend || true &&
-                        docker rm backend || true &&
+                sh """
+                docker rm -f mongo || true
+                docker rm -f backend || true
+                docker rm -f frontend || true
+                """
+            }
+        }
 
-                        docker run -d --name frontend -p 80:80 $FRONTEND_IMAGE:$BUILD_NUMBER &&
-                        docker run -d --name backend -p 3000:3000 \
-                            -e MONGO_URL="YOUR_MONGO_URL" \
-                            $BACKEND_IMAGE:$BUILD_NUMBER
-                    '
-                    """
-                }
+        stage('Deploy MongoDB') {
+            steps {
+                sh """
+                docker run -d --name mongo \
+                  -p 27017:27017 \
+                  $MONGO_IMAGE
+                """
+            }
+        }
+
+        stage('Deploy Backend') {
+            steps {
+                sh """
+                docker run -d --name backend \
+                  --link mongo \
+                  -e MONGO_URL="mongodb://mongo:27017/cruddb" \
+                  -p 3000:3000 \
+                  $BACKEND_IMAGE
+                """
+            }
+        }
+
+        stage('Deploy Frontend') {
+            steps {
+                sh """
+                docker run -d --name frontend \
+                  -p 80:80 \
+                  -e API_URL="http://YOUR_SERVER_IP:3000" \
+                  $FRONTEND_IMAGE
+                """
             }
         }
     }
-
-    post {
-        success {
-            echo "🎉 Deployment Successful!"
-        }
-        failure {
-            echo "❌ Pipeline Failed!"
-        }
-    }
 }
-

@@ -90,6 +90,7 @@ cd frontend
 docker build -t your-dockerhub/crud-frontend:latest .
 <img width="1896" height="618" alt="image" src="https://github.com/user-attachments/assets/e711d04c-a37e-4363-9ea5-b7fafe233de2" />
 
+<img width="1913" height="476" alt="image" src="https://github.com/user-attachments/assets/1416ea61-1b0e-4cd4-8b42-f59e76b21389" />
 
 # Run with Docker Compose
 docker-compose up -d

@@ -1,22 +1,19 @@
-# Stage 1: Build Angular App
-FROM node:20-alpine AS builder
+# Build Angular
+FROM node:20-alpine as builder
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
-RUN npm run build --configuration production
+RUN npm run build -- --configuration production
 
-# Stage 2: Serve with Nginx
-FROM nginx:alpine
+# Serve with NGINX
+FROM nginx:stable-alpine
 
 COPY --from=builder /app/dist/angular-15-crud /usr/share/nginx/html
 
 EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
-

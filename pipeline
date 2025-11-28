@@ -1,0 +1,83 @@
+pipeline {
+    agent any
+
+    environment {
+        FRONTEND_IMAGE = "sairam2107/crud-frontend"
+        BACKEND_IMAGE  = "sairam2107/crud-backend"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub_creds')
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/sairamsolake/crud-dd-task-mean-app.git'
+            }
+        }
+
+        stage('Build Frontend Image') {
+            steps {
+                dir('frontend') {
+                    sh 'docker build -t $FRONTEND_IMAGE:$BUILD_NUMBER .'
+                }
+            }
+        }
+
+        stage('Build Backend Image') {
+            steps {
+                dir('backend') {
+                    sh 'docker build -t $BACKEND_IMAGE:$BUILD_NUMBER .'
+                }
+            }
+        }
+
+        stage('Login to DockerHub') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+
+        stage('Push Images to Docker Hub') {
+            steps {
+                sh """
+                docker push $FRONTEND_IMAGE:$BUILD_NUMBER
+                docker push $BACKEND_IMAGE:$BUILD_NUMBER
+                """
+            }
+        }
+
+        stage('Deploy to Server') {
+            steps {
+                sshagent (credentials: ['ec2_ssh_key']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ubuntu@YOUR_SERVER_IP '
+                        docker pull $FRONTEND_IMAGE:$BUILD_NUMBER &&
+                        docker pull $BACKEND_IMAGE:$BUILD_NUMBER &&
+                        
+                        docker stop frontend || true &&
+                        docker stop backend || true &&
+                        docker rm frontend || true &&
+                        docker rm backend || true &&
+
+                        docker run -d --name frontend -p 80:80 $FRONTEND_IMAGE:$BUILD_NUMBER &&
+                        docker run -d --name backend -p 3000:3000 \
+                            -e MONGO_URL="YOUR_MONGO_URL" \
+                            $BACKEND_IMAGE:$BUILD_NUMBER
+                    '
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "🎉 Deployment Successful!"
+        }
+        failure {
+            echo "❌ Pipeline Failed!"
+        }
+    }
+}
+

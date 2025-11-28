@@ -82,10 +82,14 @@ Hosting	AWS EC2
 Build Backend Image
 cd backend
 docker build -t your-dockerhub/crud-backend:latest .
+<img width="1882" height="550" alt="image" src="https://github.com/user-attachments/assets/a430e08d-416c-4ae9-81b6-830085cf55b6" />
+
 
 # Build Frontend Image
 cd frontend
 docker build -t your-dockerhub/crud-frontend:latest .
+<img width="1896" height="618" alt="image" src="https://github.com/user-attachments/assets/e711d04c-a37e-4363-9ea5-b7fafe233de2" />
+
 
 # Run with Docker Compose
 docker-compose up -d

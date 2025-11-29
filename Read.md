@@ -102,7 +102,7 @@ docker-compose up -d
 
 # App will be available at:
 Frontend → http://localhost
-Backend → http://localhost:3000
+Backend → http://localhost:5000
 
 # CI/CD Pipeline (Jenkins)
 
